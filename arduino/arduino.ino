@@ -7,20 +7,31 @@
 ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-#define USE_SERIAL Serial1
+#define USE_SERIAL Serial
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
   switch (type) {
     case WStype_TEXT:
       USE_SERIAL.printf("[WSc] get text: %s\n", payload);
-      //TODO play tune
+
+      if(strstr(reinterpret_cast<const char*>(payload), "\"Command\":\"Start\"") != NULL){
+        //TODO play tune
+      }
+
       break;
     default:
       USE_SERIAL.printf("[WSc] other: %s\n", payload);
       break;
   }
 
+}
+
+void sendCurrentTime(){
+  char buf[64];
+  unsigned long timeLong = millis();
+  sprintf(buf, "{\"Command\":\"1\",\"Data\":\"%lu\"}", timeLong); 
+  webSocket.sendTXT(buf);
 }
 
 void setup() {
