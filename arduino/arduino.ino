@@ -27,6 +27,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 }
 
+//TODO call sendCurrentTime
 void sendCurrentTime(){
   char buf[64];
   unsigned long timeLong = millis();
