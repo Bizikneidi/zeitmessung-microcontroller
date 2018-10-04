@@ -49,17 +49,7 @@ void setup() {
   USE_SERIAL.begin(115200);
   USE_SERIAL.setDebugOutput(true);
 
-  USE_SERIAL.println();
-  USE_SERIAL.println();
-  USE_SERIAL.println();
-
-  for (uint8_t t = 4; t > 0; t--) {
-    USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
-    USE_SERIAL.flush();
-    delay(1000);
-  }
-
-  pinMode(flash_button, INPUT_PULLUP);
+  pinMode(flash_button, INPUT);
   attachInterrupt(digitalPinToInterrupt(flash_button), sendCurrentTime, RISING);
 
   WiFiMulti.addAP("4ahif", "4ahifIstGeil");
