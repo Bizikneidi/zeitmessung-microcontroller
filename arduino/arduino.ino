@@ -12,7 +12,7 @@ WebSocketsClient webSocket;
 
 #define USE_SERIAL Serial
 
-
+int flash_button = 0;
 //char* host = "192.168.0.123";
 //int port = 81;
 //char* path = "/";
@@ -59,7 +59,8 @@ void setup() {
     delay(1000);
   }
 
-
+  pinMode(flash_button, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(flash_button), sendCurrentTime, RISING);
 
   WiFiMulti.addAP("4ahif", "4ahifIstGeil");
 
