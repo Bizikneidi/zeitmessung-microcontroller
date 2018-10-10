@@ -27,7 +27,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   const char* message = reinterpret_cast<const char*>(payload);
   switch (type) {
     case WStype_TEXT: USE_SERIAL.printf("[WSc] get text: %s\n", payload);
-      if (strstr(message, "\"Command\":\"StartMeasuring\"") != NULL) {
+      if (strstr(message, "\"Command\":0") != NULL) {
         //TODO play tune
         char buf[64];
         unsigned long timeLong = millis();
