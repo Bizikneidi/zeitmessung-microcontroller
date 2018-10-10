@@ -1,8 +1,14 @@
+#define DEBUG_WEBSOCKETS(...) os_printf( __VA_ARGS__ )
+
+#ifndef DEBUG_WEBSOCKETS
+#define DEBUG_WEBSOCKETS(...) 
+#define NODEBUG_WEBSOCKETS
+#endif
+
 #include <Arduino.h>
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
-
 #include <WebSocketsClient.h>
 
 #include <Hash.h>
@@ -21,11 +27,11 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   const char* message = reinterpret_cast<const char*>(payload);
   switch (type) {
     case WStype_TEXT: USE_SERIAL.printf("[WSc] get text: %s\n", payload);
-      if (strstr(message, "\"Command\":\"StartMeasuring\"") != NULL) {
+      if (strstr(message, "\"Command\":0") != NULL) {
         //TODO play tune
         char buf[64];
         unsigned long timeLong = millis();
-        sprintf(buf, "{\"Command\":\"MeasuredStart\",\"Data\":\"%lu\"}", timeLong);
+        sprintf(buf, "{\"Command\":\"MeasuredStart\",\"Data\":%lu}", timeLong);
         USE_SERIAL.printf(buf);
         webSocket.sendTXT(buf);
       }
@@ -40,7 +46,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 void sendCurrentTime() {
   char buf[64];
   unsigned long timeLong = millis();
-  sprintf(buf, "{\"Command\":\"MeasuredEnd\",\"Data\":\"%lu\"}", timeLong);
+  sprintf(buf, "{\"Command\":\"MeasuredStop\",\"Data\":%lu}", timeLong);
   USE_SERIAL.printf(buf);
   webSocket.sendTXT(buf);
 }
@@ -60,14 +66,14 @@ void setup() {
   }
 
   // server address, port and URL
-  webSocket.begin("192.168.0.123", 81, "/");
+  webSocket.begin("172.18.2.16", 53933, "/station");
 
   // event handler
   webSocket.onEvent(webSocketEvent);
 
   // use HTTP Basic Authorization this is optional remove if not needed
   //webSocket.setAuthorization("user", "Password");
-  webSocket.setAuthorization(WiFi.macAddress().c_str());
+  //webSocket.setAuthorization(WiFi.macAddress().c_str());
 
   // try ever 5000 again if connection has failed
   webSocket.setReconnectInterval(5000);
@@ -75,9 +81,7 @@ void setup() {
 }
 
 void loop() {
-  if (WiFi.status() == WL_CONNECTED) {
+  if(WiFiMulti.run() == WL_CONNECTED){
     webSocket.loop();
-  } else {
-    webSocket.disconnect();
   }
 }
