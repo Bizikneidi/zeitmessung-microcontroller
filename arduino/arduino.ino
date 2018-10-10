@@ -31,7 +31,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
         //TODO play tune
         char buf[64];
         unsigned long timeLong = millis();
-        sprintf(buf, "{\"Command\":\"MeasuredStart\",\"Data\":\"%lu\"}", timeLong);
+        sprintf(buf, "{\"Command\":\"MeasuredStart\",\"Data\":%lu}", timeLong);
         USE_SERIAL.printf(buf);
         webSocket.sendTXT(buf);
       }
@@ -46,7 +46,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 void sendCurrentTime() {
   char buf[64];
   unsigned long timeLong = millis();
-  sprintf(buf, "{\"Command\":\"MeasuredEnd\",\"Data\":\"%lu\"}", timeLong);
+  sprintf(buf, "{\"Command\":\"MeasuredStop\",\"Data\":%lu}", timeLong);
   USE_SERIAL.printf(buf);
   webSocket.sendTXT(buf);
 }
@@ -66,7 +66,7 @@ void setup() {
   }
 
   // server address, port and URL
-  webSocket.begin("172.18.2.16", 53933, "/");
+  webSocket.begin("172.18.2.16", 53933, "/station");
 
   // event handler
   webSocket.onEvent(webSocketEvent);
@@ -81,5 +81,7 @@ void setup() {
 }
 
 void loop() {
-  webSocket.loop();
+  if(WiFiMulti.run() == WL_CONNECTED){
+    webSocket.loop();
+  }
 }
