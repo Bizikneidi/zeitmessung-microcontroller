@@ -1,54 +1,57 @@
 #define DEBUG_WEBSOCKETS(...) os_printf( __VA_ARGS__ )
-
 #ifndef DEBUG_WEBSOCKETS
-#define DEBUG_WEBSOCKETS(...) 
+#define DEBUG_WEBSOCKETS(...)
 #define NODEBUG_WEBSOCKETS
 #endif
 
 #include <Arduino.h>
-
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <WebSocketsClient.h>
-
 #include <Hash.h>
 
 ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
 #define USE_SERIAL Serial
+#define START_MEASURING "\"Command\":0"
+#define MEASURED_START "{\"Command\":\"MeasuredStart\",\"Data\":%lu}"
+#define MEASURED_STOP "{\"Command\":\"MeasuredStop\",\"Data\":%lu}"
 
 int flash_button = 0;
-//char* host = "192.168.0.123";
-//int port = 81;
-//char* path = "/";
+int mes_counter = 0;
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   const char* message = reinterpret_cast<const char*>(payload);
-  switch (type) {
-    case WStype_TEXT: USE_SERIAL.printf("[WSc] get text: %s\n", payload);
-      if (strstr(message, "\"Command\":0") != NULL) {
-        //TODO play tune
-        char buf[64];
-        unsigned long timeLong = millis();
-        sprintf(buf, "{\"Command\":\"MeasuredStart\",\"Data\":%lu}", timeLong);
-        USE_SERIAL.printf(buf);
-        webSocket.sendTXT(buf);
-      }
-      break;
-    default: USE_SERIAL.printf("[WSc] other: %s\n", payload);
-      break;
+  if (type == WStype_TEXT) {
+    USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+    if (strstr(message, START_MEASURING) != NULL) {
+      //TODO play tune
+      char buf[64];
+      unsigned long timeLong = millis();
+      sprintf(buf, MEASURED_START, timeLong);
+      USE_SERIAL.printf(buf);
+      webSocket.sendTXT(buf);
+      mes_counter++;
+    }
   }
-
+  else {
+    USE_SERIAL.printf("[WSc] other: %s\n", payload);
+  }
 }
 
-//TODO call sendCurrentTime
 void sendCurrentTime() {
-  char buf[64];
-  unsigned long timeLong = millis();
-  sprintf(buf, "{\"Command\":\"MeasuredStop\",\"Data\":%lu}", timeLong);
-  USE_SERIAL.printf(buf);
-  webSocket.sendTXT(buf);
+  if (mes_counter > 0) {
+    char buf[64];
+    unsigned long timeLong = millis();
+    sprintf(buf, MEASURED_STOP, timeLong);
+    USE_SERIAL.printf(buf);
+    webSocket.sendTXT(buf);
+    mes_counter--;
+  }
+  else {
+    USE_SERIAL.printf("Can't stop, no measurment running!");
+  }
 }
 
 void setup() {
@@ -58,9 +61,10 @@ void setup() {
   pinMode(flash_button, INPUT);
   attachInterrupt(digitalPinToInterrupt(flash_button), sendCurrentTime, RISING);
 
+  //WIFI SSID and password
   WiFiMulti.addAP("4ahif", "4ahifIstGeil");
 
-  //WiFi.disconnect();
+  //try as long as the WIFI is not connected
   while (WiFiMulti.run() != WL_CONNECTED) {
     delay(100);
   }
@@ -71,17 +75,10 @@ void setup() {
   // event handler
   webSocket.onEvent(webSocketEvent);
 
-  // use HTTP Basic Authorization this is optional remove if not needed
-  //webSocket.setAuthorization("user", "Password");
-  //webSocket.setAuthorization(WiFi.macAddress().c_str());
-
   // try ever 5000 again if connection has failed
   webSocket.setReconnectInterval(5000);
-
 }
 
 void loop() {
-  if(WiFiMulti.run() == WL_CONNECTED){
-    webSocket.loop();
-  }
+  webSocket.loop();
 }
