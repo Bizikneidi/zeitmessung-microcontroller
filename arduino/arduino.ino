@@ -15,8 +15,8 @@ WebSocketsClient webSocket;
 
 #define USE_SERIAL Serial
 #define START_MEASURING "\"Command\":0"
-#define MEASURED_START "{\"Command\":\"MeasuredStart\",\"Data\":%lu}"
-#define MEASURED_STOP "{\"Command\":\"MeasuredStop\",\"Data\":%lu}"
+#define MEASURED_START "{\"Command\":1,\"Data\":%lu}"
+#define MEASURED_STOP "{\"Command\":2,\"Data\":%lu}"
 
 int flash_button = 0;
 int mes_counter = 0;
