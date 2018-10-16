@@ -19,6 +19,7 @@ WebSocketsClient webSocket;
 #define MEASURED_STOP "{\"Command\":2,\"Data\":%lu}"
 
 int flash_button = 0;
+int tone_pin = 4;
 int mes_counter = 0;
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
@@ -26,13 +27,16 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   if (type == WStype_TEXT) {
     USE_SERIAL.printf("[WSc] get text: %s\n", payload);
     if (strstr(message, START_MEASURING) != NULL) {
-      //TODO play tune
+      
       char buf[64];
       unsigned long timeLong = millis();
       sprintf(buf, MEASURED_START, timeLong);
       USE_SERIAL.printf(buf);
       webSocket.sendTXT(buf);
       mes_counter++;
+      digitalWrite(tone_pin, HIGH);
+      delay(1000);
+      digitalWrite(tone_pin, LOW); 
     }
   }
   else {
@@ -58,6 +62,11 @@ void setup() {
   USE_SERIAL.begin(115200);
   USE_SERIAL.setDebugOutput(true);
 
+  pinMode(tone_pin, OUTPUT);
+  //test the buzzer
+  digitalWrite(tone_pin, HIGH);
+  delay(1000);
+  digitalWrite(tone_pin, LOW); 
   pinMode(flash_button, INPUT);
   attachInterrupt(digitalPinToInterrupt(flash_button), sendCurrentTime, RISING);
 
@@ -70,7 +79,7 @@ void setup() {
   }
 
   // server address, port and URL
-  webSocket.begin("172.18.2.16", 53933, "/station");
+  webSocket.beginSSL("172.18.2.16", 53933, "/station");
 
   // event handler
   webSocket.onEvent(webSocketEvent);
