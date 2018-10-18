@@ -19,7 +19,7 @@ WebSocketsClient webSocket;
 #define MEASURED_STOP "{\"Command\":2,\"Data\":%lu}"
 
 int flash_button = 0;
-int tone_pin = 4;
+int led_pin = 2;
 int mes_counter = 0;
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
@@ -34,9 +34,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       USE_SERIAL.printf(buf);
       webSocket.sendTXT(buf);
       mes_counter++;
-      digitalWrite(tone_pin, HIGH);
+      digitalWrite(led_pin, HIGH);
       delay(1000);
-      digitalWrite(tone_pin, LOW); 
+      digitalWrite(led_pin, LOW); 
     }
   }
   else {
@@ -62,11 +62,11 @@ void setup() {
   USE_SERIAL.begin(115200);
   USE_SERIAL.setDebugOutput(true);
 
-  pinMode(tone_pin, OUTPUT);
-  //test the buzzer
-  digitalWrite(tone_pin, HIGH);
+  pinMode(led_pin, OUTPUT);
+  //test the led
+  digitalWrite(led_pin, HIGH);
   delay(1000);
-  digitalWrite(tone_pin, LOW); 
+  digitalWrite(led_pin, LOW); 
   pinMode(flash_button, INPUT);
   attachInterrupt(digitalPinToInterrupt(flash_button), sendCurrentTime, RISING);
 
