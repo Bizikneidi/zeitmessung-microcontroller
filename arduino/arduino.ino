@@ -63,15 +63,13 @@ void setup() {
   USE_SERIAL.setDebugOutput(true);
 
   pinMode(led_pin, OUTPUT);
-  //test the led
-  digitalWrite(led_pin, HIGH);
-  delay(1000);
   digitalWrite(led_pin, LOW); 
+  
   pinMode(flash_button, INPUT);
   attachInterrupt(digitalPinToInterrupt(flash_button), sendCurrentTime, RISING);
 
   //WIFI SSID and password
-  WiFiMulti.addAP("4ahif", "4ahifIstGeil");
+  WiFiMulti.addAP("5AHIF", "RoflCopter");
 
   //try as long as the WIFI is not connected
   while (WiFiMulti.run() != WL_CONNECTED) {
@@ -79,7 +77,7 @@ void setup() {
   }
 
   // server address, port and URL
-  webSocket.beginSSL("172.18.2.16", 53933, "/station");
+  webSocket.begin("172.18.2.16", 5001, "/station");
 
   // event handler
   webSocket.onEvent(webSocketEvent);
