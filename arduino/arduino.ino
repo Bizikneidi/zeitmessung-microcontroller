@@ -14,7 +14,7 @@ ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
 #define USE_SERIAL Serial
-#define START_MEASURING "\"Command\":0"
+#define START_MEASURING "\"Command\":0,\"Data\":"
 #define MEASURED_START "{\"Command\":1,\"Data\":%lu}"
 #define MEASURED_STOP "{\"Command\":2,\"Data\":%lu}"
 
@@ -22,21 +22,32 @@ int flash_button = 0;
 int led_pin = 2;
 int mes_counter = 0;
 
+void removeSubstring(char *s,const char *toremove)
+{
+  while( s=strstr(s,toremove) )
+    memmove(s,s+strlen(toremove),1+strlen(s+strlen(toremove)));
+}
+
+int getStartCount(char* message){
+  removeSubstring(message, START_MEASURING);
+  message[strlen(message)-1] = 0;
+  return strtol(message,NULL,0);
+}
+
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   const char* message = reinterpret_cast<const char*>(payload);
   if (type == WStype_TEXT) {
     USE_SERIAL.printf("[WSc] get text: %s\n", payload);
     if (strstr(message, START_MEASURING) != NULL) {
-      
       char buf[64];
       unsigned long timeLong = millis();
       sprintf(buf, MEASURED_START, timeLong);
       USE_SERIAL.printf(buf);
       webSocket.sendTXT(buf);
-      mes_counter++;
-      digitalWrite(led_pin, HIGH);
+      mes_counter += getStartCount((char*)message);;
+      digitalWrite(led_pin, LOW);
       delay(1000);
-      digitalWrite(led_pin, LOW); 
+      digitalWrite(led_pin, HIGH); 
     }
   }
   else {
@@ -54,7 +65,7 @@ void sendCurrentTime() {
     mes_counter--;
   }
   else {
-    USE_SERIAL.printf("Can't stop, no measurment running!");
+    USE_SERIAL.printf("Can't stop, no measurment running!\n");
   }
 }
 
@@ -63,7 +74,7 @@ void setup() {
   USE_SERIAL.setDebugOutput(true);
 
   pinMode(led_pin, OUTPUT);
-  digitalWrite(led_pin, LOW); 
+  digitalWrite(led_pin, LOW);
   
   pinMode(flash_button, INPUT);
   attachInterrupt(digitalPinToInterrupt(flash_button), sendCurrentTime, RISING);
