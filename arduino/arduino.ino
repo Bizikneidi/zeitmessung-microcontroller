@@ -14,40 +14,41 @@ ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
 #define USE_SERIAL Serial
-#define START_MEASURING "\"Command\":0,\"Data\":"
-#define MEASURED_START "{\"Command\":1,\"Data\":%lu}"
-#define MEASURED_STOP "{\"Command\":2,\"Data\":%lu}"
 
+//define commands
+#define START_MEASURING "\"Command\":0,\"Data\":"
+#define STOP_MEASURING "\"Command\":1,\"Data\":"
+
+#define MEASURED_START "{\"Command\":2,\"Data\":%lu}"
+#define MEASURED_STOP "{\"Command\":3,\"Data\":%lu}"
+
+//define global variables
 int flash_button = 0;
 int led_pin = 2;
-int mes_counter = 0;
-
-void removeSubstring(char *s,const char *toremove)
-{
-  while( s=strstr(s,toremove) )
-    memmove(s,s+strlen(toremove),1+strlen(s+strlen(toremove)));
-}
-
-int getStartCount(char* message){
-  removeSubstring(message, START_MEASURING);
-  message[strlen(message)-1] = 0;
-  return strtol(message,NULL,0);
-}
+bool measuring = false;
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   const char* message = reinterpret_cast<const char*>(payload);
   if (type == WStype_TEXT) {
     USE_SERIAL.printf("[WSc] get text: %s\n", payload);
     if (strstr(message, START_MEASURING) != NULL) {
+      
+      //put current time into MEASURED_START
       char buf[64];
       unsigned long timeLong = millis();
       sprintf(buf, MEASURED_START, timeLong);
+      //send MEASURED_START command
       USE_SERIAL.printf(buf);
       webSocket.sendTXT(buf);
-      mes_counter += getStartCount((char*)message);;
+      
+      measuring = true;
+      //light LED for start
       digitalWrite(led_pin, LOW);
       delay(1000);
-      digitalWrite(led_pin, HIGH); 
+      digitalWrite(led_pin, HIGH);
+    }
+    else if (strstr(message, STOP_MEASURING) != NULL) {
+      measuring = false;
     }
   }
   else {
@@ -56,13 +57,17 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 }
 
 void sendCurrentTime() {
-  if (mes_counter > 0) {
+  
+  //check if measurment is running
+  if (measuring) {
+    
+    //put current time into MEASURED_STOP
     char buf[64];
     unsigned long timeLong = millis();
     sprintf(buf, MEASURED_STOP, timeLong);
+    //send MEASURED_STOP
     USE_SERIAL.printf(buf);
     webSocket.sendTXT(buf);
-    mes_counter--;
   }
   else {
     USE_SERIAL.printf("Can't stop, no measurment running!\n");
@@ -70,12 +75,15 @@ void sendCurrentTime() {
 }
 
 void setup() {
+  //Debug info
   USE_SERIAL.begin(115200);
   USE_SERIAL.setDebugOutput(true);
 
+  //set LED for start light
   pinMode(led_pin, OUTPUT);
   digitalWrite(led_pin, LOW);
-  
+
+  //set button for stop and attach stop function
   pinMode(flash_button, INPUT);
   attachInterrupt(digitalPinToInterrupt(flash_button), sendCurrentTime, RISING);
 
