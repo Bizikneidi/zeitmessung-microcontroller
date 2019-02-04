@@ -18,7 +18,6 @@ WebSocketsClient webSocket;
 //define commands
 #define START_MEASURING "\"Command\":0,\"Data\":"
 #define STOP_MEASURING "\"Command\":1,\"Data\":"
-
 #define MEASURED_START "{\"Command\":2,\"Data\":%lu}"
 #define MEASURED_STOP "{\"Command\":3,\"Data\":%lu}"
 
